@@ -6,33 +6,42 @@ import Header from './components/ui/Header';
 import './App.css';
 
 function App() {
-  const [selectedParameters, setSelectedParameters] = useState(['T2M', 'RH2M', 'AOD_55']);
-  const [mapCenter, setMapCenter] = useState({ lat: 31.5497, lon: 74.3436 });
-  const [mapZoom, setMapZoom] = useState(6);
+  const [selectedParameters, setSelectedParameters] = useState(['T2M']);
+  const [mapCenter, setMapCenter] = useState({ lat: 0, lon: 0 });
+  const [mapZoom, setMapZoom] = useState(2);
   const [nasaData, setNasaData] = useState(null);
-  const [selectedCity, setSelectedCity] = useState('Lahore');
+  const [selectedCity, setSelectedCity] = useState('Global');
   const [activeLayers, setActiveLayers] = useState({
     heatmap: true,
     scatter: false,
     geojson: false,
     text: false,
-    arc: false
+    arc: false,
+    chloropleth: false,
+    contour: false
   });
   const [loading, setLoading] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
-  // Handle AI query response
-  const handleAIResponse = (response) => {
-    if (response.visualization) {
-      const { center, zoom, parameters } = response.visualization;
-      setMapCenter({ lat: center[1], lon: center[0] });
-      setMapZoom(zoom || 10);
-      setSelectedParameters(parameters);
-    }
-    if (response.nasaData) {
-      setNasaData(response.nasaData);
-    }
-    if (response.response && response.response.city) {
-      setSelectedCity(response.response.city);
+  // Handle AI parameters change
+  const handleParametersChange = (parameters) => {
+    setSelectedParameters(parameters);
+  };
+
+  // Handle AI layer recommendation
+  const handleLayerChange = (recommendedLayers) => {
+    const newLayers = { ...activeLayers };
+    Object.keys(newLayers).forEach(key => {
+      newLayers[key] = recommendedLayers.includes(key);
+    });
+    setActiveLayers(newLayers);
+  };
+
+  // Handle AI location change
+  const handleLocationChange = (location) => {
+    if (location && location.lat !== undefined && location.lon !== undefined) {
+      setMapCenter({ lat: location.lat, lon: location.lon });
+      setMapZoom(location.zoom || 10);
     }
   };
 
@@ -73,22 +82,34 @@ function App() {
       <Header />
       
       <div className="main-layout">
-        {/* Left Panel - Controls and AI */}
-        <div className="left-panel">
-          <AIAssistant onResponse={handleAIResponse} />
+        {/* Left Panel - Controls */}
+        <div className={`left-panel ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+          <button 
+            className="sidebar-toggle"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          >
+            {isSidebarCollapsed ? '→' : '←'}
+          </button>
           
-          <ParameterControls
-            selectedParameters={selectedParameters}
-            onParametersChange={setSelectedParameters}
-            activeLayers={activeLayers}
-            onToggleLayer={toggleLayer}
-            selectedCity={selectedCity}
-            onCityChange={(city, coords) => {
-              setSelectedCity(city);
-              setMapCenter(coords);
-              setMapZoom(10);
-            }}
-          />
+          {!isSidebarCollapsed && (
+            <ParameterControls
+              selectedParameters={selectedParameters}
+              onParametersChange={setSelectedParameters}
+              activeLayers={activeLayers}
+              onToggleLayer={toggleLayer}
+              selectedCity={selectedCity}
+              onCityChange={(city, coords) => {
+                setSelectedCity(city);
+                if (city === 'Global') {
+                  setMapCenter({ lat: 0, lon: 0 });
+                  setMapZoom(2);
+                } else {
+                  setMapCenter(coords);
+                  setMapZoom(10);
+                }
+              }}
+            />
+          )}
         </div>
 
         {/* Main Panel - Map */}
@@ -103,6 +124,14 @@ function App() {
           />
         </div>
       </div>
+
+      {/* Floating AI Assistant Dock */}
+      <AIAssistant 
+        onParametersChange={handleParametersChange} 
+        onLayerChange={handleLayerChange}
+        onLocationChange={handleLocationChange}
+        isSidebarCollapsed={isSidebarCollapsed}
+      />
     </div>
   );
 }

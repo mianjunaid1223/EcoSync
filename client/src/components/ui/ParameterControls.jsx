@@ -1,5 +1,5 @@
-import React from 'react';
-import { Thermometer, Droplet, Wind, Gauge, Eye, MapPin, Layers } from 'lucide-react';
+import React, { useState } from 'react';
+import { Thermometer, Droplet, Wind, Gauge, Eye, MapPin, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 import './ParameterControls.css';
 
 const PARAMETERS = [
@@ -12,6 +12,7 @@ const PARAMETERS = [
 ];
 
 const CITIES = [
+  { name: 'Global', lat: 0, lon: 0, country: 'World' },
   { name: 'Lahore', lat: 31.5497, lon: 74.3436, country: 'Pakistan' },
   { name: 'Karachi', lat: 24.8607, lon: 67.0011, country: 'Pakistan' },
   { name: 'Islamabad', lat: 33.6844, lon: 73.0479, country: 'Pakistan' },
@@ -40,6 +41,8 @@ const ParameterControls = ({
   selectedCity,
   onCityChange
 }) => {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
   const toggleParameter = (paramId) => {
     if (selectedParameters.includes(paramId)) {
       // Don't allow removing if it's the last one
@@ -63,8 +66,8 @@ const ParameterControls = ({
       {/* City Selection */}
       <div className="control-section card">
         <div className="section-header">
-          <MapPin size={18} />
-          <h3>Select Location</h3>
+          <MapPin size={18} className="header-icon" />
+          <h3>Location</h3>
         </div>
         <select 
           className="select city-select"
@@ -82,7 +85,7 @@ const ParameterControls = ({
       {/* Parameter Selection */}
       <div className="control-section card">
         <div className="section-header">
-          <Gauge size={18} />
+          <Gauge size={18} className="header-icon" />
           <h3>Data Parameters</h3>
         </div>
         <div className="parameter-grid">
@@ -108,41 +111,52 @@ const ParameterControls = ({
         </div>
       </div>
 
-      {/* Layer Controls */}
-      <div className="control-section card">
-        <div className="section-header">
-          <Layers size={18} />
-          <h3>Visualization Layers</h3>
-        </div>
-        <div className="layer-toggles">
-          {LAYER_TYPES.map(layer => (
-            <div key={layer.id} className="layer-toggle">
-              <label className="toggle-label">
-                <input
-                  type="checkbox"
-                  checked={activeLayers[layer.id]}
-                  onChange={() => onToggleLayer(layer.id)}
-                  className="toggle-input"
-                />
-                <span className="toggle-slider"></span>
-                <span className="toggle-text">
-                  <strong>{layer.name}</strong>
-                  <small>{layer.description}</small>
-                </span>
-              </label>
+      {/* Advanced Tools Dropdown */}
+      <div className="control-section card advanced-section">
+        <button 
+          className="advanced-header"
+          onClick={() => setAdvancedOpen(!advancedOpen)}
+        >
+          <div className="section-header">
+            <Settings size={18} className="header-icon" />
+            <h3>Advanced Tools</h3>
+          </div>
+          {advancedOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </button>
+
+        {advancedOpen && (
+          <div className="advanced-content">
+            <div className="layer-toggles">
+              {LAYER_TYPES.map(layer => (
+                <div key={layer.id} className="layer-toggle">
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={activeLayers[layer.id]}
+                      onChange={() => onToggleLayer(layer.id)}
+                      className="toggle-input"
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-text">
+                      <strong>{layer.name}</strong>
+                      <small>{layer.description}</small>
+                    </span>
+                  </label>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Info Section */}
       <div className="info-section card">
-        <h4>💡 Tips</h4>
+        <h4>ℹ️ Quick Guide</h4>
         <ul>
-          <li>Use the AI assistant to query specific locations</li>
-          <li>Select multiple parameters to compare data</li>
-          <li>Toggle layers for different visualizations</li>
-          <li>Hover over map points to see detailed values</li>
+          <li>AI automatically selects optimal layers</li>
+          <li>Use natural language queries above</li>
+          <li>Select multiple parameters to compare</li>
+          <li>Advanced tools for fine-tuning</li>
         </ul>
       </div>
     </div>

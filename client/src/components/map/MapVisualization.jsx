@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
-import { Map } from 'react-map-gl/maplibre';
+import { Map } from 'react-map-gl';
 import { ScatterplotLayer, TextLayer, ArcLayer, GeoJsonLayer } from '@deck.gl/layers';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import './MapVisualization.css';
+
+const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoidGhhdGp1bmFpZCIsImEiOiJjbWdjMnY2cTExNDA4MmxzYTFsdWNqc2ZkIn0.4D5aI8pyuzbsaLZeVvYV8Q';
 
 const MapVisualization = ({ 
   center, 
@@ -14,12 +16,24 @@ const MapVisualization = ({
   activeLayers,
   loading 
 }) => {
+  const [mapStyle, setMapStyle] = React.useState('mapbox://styles/mapbox/dark-v11');
+
   const viewState = {
     longitude: center.lon,
     latitude: center.lat,
     zoom: zoom,
     pitch: 0,
     bearing: 0
+  };
+
+  const mapStyles = {
+    dark: 'mapbox://styles/mapbox/dark-v11',
+    light: 'mapbox://styles/mapbox/light-v11',
+    streets: 'mapbox://styles/mapbox/streets-v12',
+    satellite: 'mapbox://styles/mapbox/satellite-v9',
+    satelliteStreets: 'mapbox://styles/mapbox/satellite-streets-v12',
+    outdoors: 'mapbox://styles/mapbox/outdoors-v12',
+    navigation: 'mapbox://styles/mapbox/navigation-day-v1'
   };
 
   // Generate data points from NASA data
@@ -210,6 +224,7 @@ const MapVisualization = ({
       {loading && (
         <div className="loading-overlay">
           <div className="spinner"></div>
+          <div className="loading-text">Loading data...</div>
         </div>
       )}
       
@@ -234,9 +249,53 @@ const MapVisualization = ({
         }
       >
         <Map 
-          mapStyle="https://demotiles.maplibre.org/style.json"
+          mapboxAccessToken={MAPBOX_ACCESS_TOKEN}
+          mapStyle={mapStyle}
         />
       </DeckGL>
+
+      {/* Map Style Selector */}
+      <div className="map-style-selector">
+        <h4>Map Style</h4>
+        <div className="style-buttons">
+          <button 
+            className={mapStyle === mapStyles.dark ? 'active' : ''}
+            onClick={() => setMapStyle(mapStyles.dark)}
+          >
+            Dark
+          </button>
+          <button 
+            className={mapStyle === mapStyles.light ? 'active' : ''}
+            onClick={() => setMapStyle(mapStyles.light)}
+          >
+            Light
+          </button>
+          <button 
+            className={mapStyle === mapStyles.streets ? 'active' : ''}
+            onClick={() => setMapStyle(mapStyles.streets)}
+          >
+            Streets
+          </button>
+          <button 
+            className={mapStyle === mapStyles.satellite ? 'active' : ''}
+            onClick={() => setMapStyle(mapStyles.satellite)}
+          >
+            Satellite
+          </button>
+          <button 
+            className={mapStyle === mapStyles.satelliteStreets ? 'active' : ''}
+            onClick={() => setMapStyle(mapStyles.satelliteStreets)}
+          >
+            Hybrid
+          </button>
+          <button 
+            className={mapStyle === mapStyles.outdoors ? 'active' : ''}
+            onClick={() => setMapStyle(mapStyles.outdoors)}
+          >
+            Outdoors
+          </button>
+        </div>
+      </div>
 
       {/* Map Legend */}
       <div className="map-legend">
