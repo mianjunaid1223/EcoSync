@@ -97,7 +97,7 @@ npm run dev
 Terminal 2 - Frontend:
 ```bash
 cd client
-npm run dev
+npm run build
 ```
 
 4. **Open Browser**
