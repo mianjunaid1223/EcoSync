@@ -22,7 +22,7 @@
   background: rgba(0, 0, 0, 0.95);
 
   padding: 16px 24px;
-  border: 1px solid rgba(139, 92, 246, 0.18);
+  border: 3px solid rgba(151, 118, 227, 0.832);
   border-bottom: none;
   border-radius: 20px 20px 0 0;
 
@@ -32,17 +32,20 @@
 }
 
 .input-wrapper:hover {
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: rgba(151, 118, 227, 0.832);
   border-width: 3px;
+  box-shadow: 0 0 18px rgba(151, 118, 227, 0.832);
 }
 
 .input-wrapper:focus-within {
-  border-color: rgba(139, 92, 246, 0.6);
+  border-color: rgba(151, 118, 227, 0.832);
   border-width: 3px;
+  box-shadow: 0 0 18px rgba(151, 118, 227, 0.832);
 }
 
 .input-wrapper::before {
   content: '';
+  box-shadow: 0 0 18px rgba(151, 118, 227, 0.832);
   position: absolute;
   inset: -2px;
   border-radius: 24px;
@@ -50,6 +53,7 @@
   border-width: 3px;
   opacity: 0;
   transition: opacity 0.3s ease;
+  border-color: rgba(151, 118, 227, 0.832);
   filter: blur(10px);
 }
 
@@ -219,6 +223,7 @@
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: rgba(151, 118, 227, 0.832);
   position: relative;
   overflow: hidden;
 }
