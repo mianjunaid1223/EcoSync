@@ -25,6 +25,7 @@
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+
 /* ================= HEADER ================= */
 .header {
   background: var(--surface-0);
@@ -52,6 +53,7 @@
   inset: 0;
   border-radius: var(--border-radius-lg);
   padding: 1px;
+  pointer-events: none;
 }
 
 /* ================= TOGGLE SIDEBAR ================= */
