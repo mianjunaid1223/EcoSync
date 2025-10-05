@@ -2,15 +2,15 @@ import React, { useState, useRef } from 'react';
 import { Send, Loader, Sparkles } from 'lucide-react';
 import './AIAssistant.css';
 
-const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSidebarCollapsed }) => {
+const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState(null);
   const [showResponse, setShowResponse] = useState(false);
   const [lastInteraction, setLastInteraction] = useState(null);
-  const [showLastInteraction, setShowLastInteraction] = useState(false);
+  const [showLastInteraction, setShowLastInteraction] = useState(true);
   const inputRef = useRef(null);
-
+const [toastFocused, setToastFocused] = useState(false);
   const getCurrentDateTime = () => {
     const now = new Date();
     return now.toLocaleString('en-US', {
@@ -27,7 +27,9 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-
+  if (inputRef.current) {
+    inputRef.current.blur();
+  }
     const userMessage = input.trim();
     setInput('');
     setIsLoading(true);
@@ -118,9 +120,13 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
   };
 
   return (
-    <div className="ai-assistant-container">
-      {showLastInteraction && lastInteraction && (
-        <div className="last-interaction-toast">
+   <div className="ai-assistant-container">
+      {(showLastInteraction && lastInteraction && !(showResponse && response)) || toastFocused ? (
+        <div 
+          className="last-interaction-toast" 
+          onMouseEnter={() => setToastFocused(true)} 
+          onMouseLeave={() => setToastFocused(false)}
+        >
           <div className="last-query">
             <span className="label">Last Query:</span>
             <p>{lastInteraction.query}</p>
@@ -131,7 +137,7 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
           </div>
           <div className="timestamp">{lastInteraction.timestamp}</div>
         </div>
-      )}
+      ) : null}
       {showResponse && response && (
         <div className={`ai-response-toast ${response.error ? 'error' : ''}`}>
           <div className="response-content">
@@ -149,12 +155,11 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
           )}
         </div>
       )}
-
       <form onSubmit={handleSubmit} className="ai-input-bar">
         <div 
           className="input-wrapper"
-          onMouseEnter={handleInputHover}
-          onMouseLeave={handleInputLeave}
+          onFocus={handleInputHover}
+          onBlur={handleInputLeave}
         >
           <Sparkles className="ai-icon" size={20} />
           <input
@@ -182,5 +187,4 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
     </div>
   );
 };
-
 export default AIAssistant;
