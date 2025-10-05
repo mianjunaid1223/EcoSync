@@ -10,7 +10,7 @@ A cutting-edge MERN-based web application for NASA Space Apps Challenge 2025 tha
 ### 🗺️ Interactive Map Visualization
 - **Deck.gl Integration**: High-performance WebGL-powered visualization layers
 - **Multiple Layer Types**: Heatmap, Scatterplot, GeoJSON, Text, and Arc layers
-- **Google Maps Base Map**: Beautiful dark-themed satellite imagery with @vis.gl/react-google-maps
+- **MapBox Base Map**: Beautiful dark-themed satellite imagery with @vis.gl/react-google-maps
 
 ### 📊 Dynamic Data Overlays
 Fetch and visualize real-time data from **NASA POWER API**:
