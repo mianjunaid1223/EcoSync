@@ -16,7 +16,7 @@ const MapVisualization = ({
   activeLayers,
   loading 
 }) => {
-  const [mapStyle, setMapStyle] = React.useState('mapbox://styles/mapbox/dark-v11');
+  const [mapStyle, setMapStyle] = React.useState('mapbox://styles/mapbox/streets-v12');
 
   const viewState = {
     longitude: center.lon,
@@ -60,17 +60,21 @@ const MapVisualization = ({
         const lat = center.lat + (Math.random() - 0.5) * spread;
         const lon = center.lon + (Math.random() - 0.5) * spread;
         
-        // Get value with some variance
-        const baseValue = parameter[firstParam][latestDate] || 0;
-        const value = baseValue + (Math.random() - 0.5) * baseValue * 0.2;
-
-        points.push({
-          position: [lon, lat],
-          value: value,
-          weight: Math.abs(value),
-          parameter: firstParam,
-          date: latestDate
-        });
+        // Get value for the parameter
+        const baseValue = parameter[firstParam][latestDate];
+        // Only add point if we have a valid value
+        if (baseValue !== undefined) {
+          // Add small variance to create a more natural visualization
+          const adjustedValue = Number((baseValue + (Math.random() - 0.5) * baseValue * 0.1).toFixed(2));
+          
+          points.push({
+            position: [lon, lat],
+            value: adjustedValue,
+            weight: Math.abs(adjustedValue),
+            parameter: firstParam,
+            date: latestDate
+          });
+        }
       }
     }
 
@@ -85,16 +89,16 @@ const MapVisualization = ({
       id: 'heatmap-layer',
       data: dataPoints,
       getPosition: d => d.position,
-      getWeight: d => d.weight,
+      getWeight: d => Math.max(0, d.value + 20), // Offset negative temperatures to ensure positive weights
       radiusPixels: 60,
       intensity: 1,
       threshold: 0.05,
       colorRange: [
-        [0, 255, 0, 25],      // Green (low)
-        [255, 255, 0, 85],    // Yellow
-        [255, 165, 0, 127],   // Orange
-        [255, 0, 0, 170],     // Red (high)
-        [139, 0, 0, 255]      // Dark Red (extreme)
+        [0, 0, 255, 25],     // Blue (cold)
+        [0, 255, 255, 85],   // Cyan
+        [0, 255, 0, 127],    // Green
+        [255, 255, 0, 170],  // Yellow
+        [255, 0, 0, 255]     // Red (hot)
       ]
     });
   }, [activeLayers.heatmap, dataPoints]);
@@ -297,29 +301,7 @@ const MapVisualization = ({
         </div>
       </div>
 
-      {/* Map Legend */}
-      <div className="map-legend">
-        <h4>Parameter: {selectedParameters[0]}</h4>
-        <div className="legend-gradient">
-          <span>Low</span>
-          <div className="gradient-bar"></div>
-          <span>High</span>
-        </div>
-      </div>
 
-      {/* Data Info */}
-      {nasaData && (
-        <div className="data-info">
-          <div className="info-item">
-            <span className="info-label">Location:</span>
-            <span className="info-value">{center.lat.toFixed(4)}°, {center.lon.toFixed(4)}°</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Data Points:</span>
-            <span className="info-value">{dataPoints.length}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

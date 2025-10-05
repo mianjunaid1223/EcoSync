@@ -7,6 +7,8 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState(null);
   const [showResponse, setShowResponse] = useState(false);
+  const [lastInteraction, setLastInteraction] = useState(null);
+  const [showLastInteraction, setShowLastInteraction] = useState(false);
   const inputRef = useRef(null);
 
   const getCurrentDateTime = () => {
@@ -50,12 +52,20 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
 
       const data = await apiResponse.json();
       
-      setResponse({
+      const responseData = {
         text: data.response?.summary || data.response || 'Data loaded successfully',
         parameters: data.response?.parameters || data.parameters,
         layers: data.response?.layers
-      });
+      };
+      setResponse(responseData);
       setShowResponse(true);
+      
+      // Store last interaction
+      setLastInteraction({
+        query: userMessage,
+        response: responseData.text,
+        timestamp: getCurrentDateTime()
+      });
 
       if (data.parameters && onParametersChange) {
         onParametersChange(data.parameters);
@@ -97,8 +107,31 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
     }
   };
 
+  const handleInputHover = () => {
+    if (lastInteraction) {
+      setShowLastInteraction(true);
+    }
+  };
+
+  const handleInputLeave = () => {
+    setShowLastInteraction(false);
+  };
+
   return (
-    <div className={`ai-assistant-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className="ai-assistant-container">
+      {showLastInteraction && lastInteraction && (
+        <div className="last-interaction-toast">
+          <div className="last-query">
+            <span className="label">Last Query:</span>
+            <p>{lastInteraction.query}</p>
+          </div>
+          <div className="last-response">
+            <span className="label">Response:</span>
+            <p>{lastInteraction.response}</p>
+          </div>
+          <div className="timestamp">{lastInteraction.timestamp}</div>
+        </div>
+      )}
       {showResponse && response && (
         <div className={`ai-response-toast ${response.error ? 'error' : ''}`}>
           <div className="response-content">
@@ -118,7 +151,11 @@ const AIAssistant = ({ onParametersChange, onLayerChange, onLocationChange, isSi
       )}
 
       <form onSubmit={handleSubmit} className="ai-input-bar">
-        <div className="input-wrapper">
+        <div 
+          className="input-wrapper"
+          onMouseEnter={handleInputHover}
+          onMouseLeave={handleInputLeave}
+        >
           <Sparkles className="ai-icon" size={20} />
           <input
             ref={inputRef}

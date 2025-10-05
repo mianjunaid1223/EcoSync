@@ -35,7 +35,16 @@ router.post('/query', async (req, res) => {
     }
 
     // Step 1: Use Gemini to parse the query
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY is missing in server environment.' });
+    }
+    let model;
+    try {
+      model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    } catch (initError) {
+      console.error('Gemini Model Init Error:', initError);
+      return res.status(500).json({ error: 'Failed to initialize Gemini model', message: initError.message });
+    }
 
     const systemPrompt = `You are a map assistant integrated in an air quality and atmospheric data forecasting app called EcoSync.
 
@@ -45,7 +54,7 @@ When the user asks for data about a specific city or region, you should:
 3. Return a structured JSON response
 
 Available NASA POWER parameters:
-- T2M: Temperature at 2 Meters (°C)
+- T2M: Temperature at 2 Meters (°C, NASA POWER provides daily temperatures directly in Celsius)
 - RH2M: Relative Humidity at 2 Meters (%)
 - PRECTOT: Precipitation (mm/day)
 - WS2M: Wind Speed at 2 Meters (m/s)
@@ -68,8 +77,14 @@ Return ONLY a JSON object with this structure:
 
 If city not found in database, use your knowledge to provide approximate coordinates.`;
 
-    const result = await model.generateContent(systemPrompt);
-    const aiResponse = result.response.text();
+    let result, aiResponse;
+    try {
+      result = await model.generateContent(systemPrompt);
+      aiResponse = result.response.text();
+    } catch (aiError) {
+      console.error('Gemini API Error:', aiError);
+      return res.status(502).json({ error: 'Gemini API request failed', message: aiError.message });
+    }
 
     // Parse AI response
     let parsedResponse;
@@ -80,21 +95,23 @@ If city not found in database, use your knowledge to provide approximate coordin
       const jsonString = jsonMatch ? jsonMatch[1] : aiResponse;
       parsedResponse = JSON.parse(jsonString);
     } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
+      console.error('Failed to parse AI response:', parseError, aiResponse);
       return res.status(500).json({ 
         error: 'Failed to parse AI response',
-        rawResponse: aiResponse 
+        rawResponse: aiResponse,
+        parseError: parseError.message
       });
     }
 
     // Step 2: Fetch NASA data for the identified location
     const { coordinates, parameters } = parsedResponse;
-    
+
     if (!coordinates || !parameters || parameters.length === 0) {
       return res.json({
         success: true,
         response: parsedResponse,
-        message: 'Could not identify specific location or parameters'
+        message: 'Could not identify specific location or parameters',
+        debug: { coordinates, parameters }
       });
     }
 
@@ -111,7 +128,8 @@ If city not found in database, use your knowledge to provide approximate coordin
       const nasaResponse = await axios.get(nasaUrl);
       nasaData = nasaResponse.data;
     } catch (nasaError) {
-      console.error('NASA API Error:', nasaError.message);
+      console.error('NASA API Error:', nasaError.message, nasaError.response?.data);
+      nasaData = { error: 'NASA API request failed', message: nasaError.message, nasaResponse: nasaError.response?.data || null };
     }
 
     // Step 3: Generate enhanced summary with actual data
@@ -120,7 +138,11 @@ If city not found in database, use your knowledge to provide approximate coordin
       const latestDate = Object.keys(nasaData.properties.parameter[parameters[0]] || {}).pop();
       const dataPoints = parameters.map(param => {
         const value = nasaData.properties.parameter[param]?.[latestDate];
-        return `${param}: ${value}`;
+        if (value === undefined || value <= -998) return `${param}: No data`;
+        const formattedValue = param.startsWith('T2M') ? 
+          `${value.toFixed(1)}°C` : 
+          value.toFixed(2);
+        return `${param}: ${formattedValue}`;
       }).join(', ');
       
       enhancedSummary += `\n\nLatest data (${latestDate}): ${dataPoints}`;
@@ -141,11 +163,10 @@ If city not found in database, use your knowledge to provide approximate coordin
         parameters
       }
     });
-
   } catch (error) {
-    console.error('AI Query Error:', error.message);
+    console.error('AI Query Route Error:', error);
     res.status(500).json({ 
-      error: 'Failed to process query',
+      error: 'Internal server error in AI route',
       message: error.message 
     });
   }

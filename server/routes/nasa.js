@@ -16,7 +16,8 @@ router.get('/data', async (req, res) => {
     // Validation
     if (!lat || !lon || !parameters) {
       return res.status(400).json({ 
-        error: 'Missing required parameters: lat, lon, parameters' 
+        error: 'Missing required parameters: lat, lon, parameters',
+        details: { lat, lon, parameters }
       });
     }
 
@@ -29,11 +30,47 @@ router.get('/data', async (req, res) => {
     const params = parameters.split(',').join(',');
     const url = `${NASA_API_BASE}?parameters=${params}&community=RE&longitude=${lon}&latitude=${lat}&start=${startDate}&end=${endDate}&format=JSON`;
 
-    const response = await axios.get(url);
+    let response;
+    try {
+      response = await axios.get(url);
+    } catch (apiError) {
+      console.error('NASA API Error:', apiError.message, apiError.response?.data);
+      return res.status(502).json({
+        error: 'NASA API request failed',
+        message: apiError.message,
+        nasaResponse: apiError.response?.data || null
+      });
+    }
+
+    // Process and validate data
+    const processedData = {
+      ...response.data,
+      properties: {
+        parameter: {}
+      }
+    };
+
+    // Process each parameter
+    Object.entries(response.data.properties.parameter).forEach(([param, values]) => {
+      processedData.properties.parameter[param] = {};
+      
+      // Process each date's value
+      Object.entries(values).forEach(([date, value]) => {
+        // NASA POWER uses -999 or -998 as fill values for missing data
+        if (value > -998) {
+          if (param.startsWith('T2M')) { // Handle all T2M parameters
+            // NASA POWER temperatures are in Celsius for daily data
+            processedData.properties.parameter[param][date] = value;
+          } else {
+            processedData.properties.parameter[param][date] = value;
+          }
+        }
+      });
+    });
 
     res.json({
       success: true,
-      data: response.data,
+      data: processedData,
       metadata: {
         coordinates: { lat: parseFloat(lat), lon: parseFloat(lon) },
         parameters: params.split(','),
@@ -42,9 +79,9 @@ router.get('/data', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('NASA API Error:', error.message);
+    console.error('NASA API Route Error:', error);
     res.status(500).json({ 
-      error: 'Failed to fetch NASA data',
+      error: 'Internal server error in NASA route',
       message: error.message 
     });
   }

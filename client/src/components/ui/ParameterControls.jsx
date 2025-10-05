@@ -149,16 +149,6 @@ const ParameterControls = ({
         )}
       </div>
 
-      {/* Info Section */}
-      <div className="info-section card">
-        <h4>ℹ️ Quick Guide</h4>
-        <ul>
-          <li>AI automatically selects optimal layers</li>
-          <li>Use natural language queries above</li>
-          <li>Select multiple parameters to compare</li>
-          <li>Advanced tools for fine-tuning</li>
-        </ul>
-      </div>
     </div>
   );
 };

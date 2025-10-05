@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import MapVisualization from './components/map/MapVisualization';
 import AIAssistant from './components/ai/AIAssistant';
 import ParameterControls from './components/ui/ParameterControls';
@@ -11,17 +11,48 @@ function App() {
   const [mapZoom, setMapZoom] = useState(2);
   const [nasaData, setNasaData] = useState(null);
   const [selectedCity, setSelectedCity] = useState('Global');
-  const [activeLayers, setActiveLayers] = useState({
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const defaultLayerState = useMemo(() => ({
     heatmap: true,
     scatter: false,
-    geojson: false,
-    text: false,
+    geojson: true,
+    text: true,
     arc: false,
     chloropleth: false,
     contour: false
+  }), []);
+
+  const [activeLayers, setActiveLayers] = useState({
+    ...defaultLayerState,
+    heatmap: false,
+    geojson: false,
+    text: false
   });
   const [loading, setLoading] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+  // Update layers based on coordinates
+  useEffect(() => {
+    const isGlobalView = selectedCity === 'Global' || (mapCenter.lat === 0 && mapCenter.lon === 0);
+    
+    if (isGlobalView) {
+      setActiveLayers(prev => {
+        const newLayers = {...prev};
+        Object.keys(newLayers).forEach(key => {
+          newLayers[key] = false;
+        });
+        return newLayers;
+      });
+    } else {
+      setActiveLayers(prev => ({
+        ...prev,
+        ...defaultLayerState
+      }));
+    }
+  }, [selectedCity, mapCenter.lat, mapCenter.lon, defaultLayerState]);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
   // Handle AI parameters change
   const handleParametersChange = (parameters) => {
@@ -81,15 +112,39 @@ function App() {
     <div className="app-container">
       <Header />
       
-      <div className="main-layout">
+            <Header 
+              toggleSidebar={toggleSidebar} 
+              isSidebarCollapsed={isSidebarCollapsed}
+              selectedParameters={selectedParameters}
+              nasaData={nasaData}
+              center={mapCenter}
+              dataPoints={nasaData?.properties?.parameter && selectedParameters[0] ? 
+                Object.values(nasaData.properties.parameter[selectedParameters[0]]).filter(value => value !== null).length : 0
+              }
+            />
+      <div className={`main-layout ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <div className="left-panel">
+          <ParameterControls
+            selectedParameters={selectedParameters}
+            onParametersChange={setSelectedParameters}
+            activeLayers={activeLayers}
+            onToggleLayer={toggleLayer}
+            selectedCity={selectedCity}
+            onCityChange={(city, coords) => {
+              setSelectedCity(city);
+              if (city === 'Global') {
+                setMapCenter({ lat: 0, lon: 0 });
+                setMapZoom(2);
+              } else {
+                setMapCenter(coords);
+                setMapZoom(10);
+              }
+            }}
+          />
+        </div>
         {/* Left Panel - Controls */}
         <div className={`left-panel ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-          <button 
-            className="sidebar-toggle"
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          >
-            {isSidebarCollapsed ? '→' : '←'}
-          </button>
+          
           
           {!isSidebarCollapsed && (
             <ParameterControls
@@ -105,7 +160,7 @@ function App() {
                   setMapZoom(2);
                 } else {
                   setMapCenter(coords);
-                  setMapZoom(10);
+                  setMapZoom(8);
                 }
               }}
             />
