@@ -47,6 +47,13 @@ Fetch and visualize real-time data from **NASA POWER API**:
 
 See [API_ENDPOINTS.md](./API_ENDPOINTS.md) for complete documentation.
 
+## 📄 Documentation
+
+- **[README.md](./README.md)** - Project overview and quick start guide
+- **[SETUP.md](./SETUP.md)** - Detailed setup instructions
+- **[API_ENDPOINTS.md](./API_ENDPOINTS.md)** - Complete API reference
+- **[WORK_PORTFOLIO.md](./WORK_PORTFOLIO.md)** - Comprehensive work portfolio (also available as [PDF](./WORK_PORTFOLIO.pdf))
+
 ## �🚀 Quick Start
 
 ### Prerequisites
@@ -123,6 +130,8 @@ EcoSync/
 │   ├── server.js
 │   └── package.json
 │
+├── WORK_PORTFOLIO.md       # Comprehensive work portfolio
+├── WORK_PORTFOLIO.pdf      # PDF version of portfolio
 └── README.md
 ```
 
